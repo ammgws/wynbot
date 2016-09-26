@@ -59,7 +59,6 @@ class HangoutsClient(ClientXMPP):
         self.register_plugin('xep_0030')  # Service Discovery
         self.register_plugin('xep_0004')  # Data Forms
         self.register_plugin('xep_0199')  # XMPP Ping
-        self.register_plugin('xep_0045') # Multi-User Chat
 
         # The session_start event will be triggered when the
         # XMPP client establishes its connection with the server
@@ -70,12 +69,6 @@ class HangoutsClient(ClientXMPP):
         # Triggered whenever a message stanza is received.
         # Note this includes MUC and error messages.
         self.add_event_handler('message', self.message)
-
-        # The groupchat_message event is triggered whenever a message
-        # stanza is received from any chat room. If you also also
-        # register a handler for the 'message' event, MUC messages
-        # will be processed by both handlers.
-        self.add_event_handler("groupchat_message", self.group_message)
 
         # Triggered whenever a 'connected' xmpp event is stanza is received,
         # in particular when connection to xmpp server is established.
@@ -147,32 +140,10 @@ class HangoutsClient(ClientXMPP):
             logging.error('[Hangouts] Server is taking too long to respond')
             self.disconnect(send_close=False)
 
-    def message(self, msg):
-        '''
-        Process incoming message stanzas, check user and
-        send valid Ammcon commands to microcontroller.
-        Note: message stanzas may include MUC messages and error messages.
+        self.send_message(mto=self.recipient, mbody=self.msg)
+        
+        self.disconnect(wait=True)
 
-        Args:
-            msg -- The received message stanza. See SleekXMPP docs for
-            stanza objects and the Message stanza to see how it may be used.
-        Returns:
-            Message to send back to Hangouts user
-        '''
-
-        # Google Hangouts seems to only use the 'chat' type for messages
-        # Hangouts sends the following stanzas apart from actual messages from the user:
-        # ・When user is typing: <composing xmlns="http://jabber.org/protocol/chatstates" />
-        # ・Paused after typing: <paused xmlns="http://jabber.org/protocol/chatstates" />
-        # ・Inactive (seems to be if user deletes message without sending): <inactive xmlns="http://jabber.org/protocol/chatstates" />
-        logging.debug('Sending standard message')
-        if msg['type'] in ('chat', 'normal'):
-            msg.reply("ohk").send()
-
-    def group_message(self, msg):
-        logging.debug('Sending group message')
-        if msg['type'] in ('chat', 'normal'):
-            msg.reply("ohk").send()
 
     def google_authenticate(self):
         ''' Get access token for Hangouts login.

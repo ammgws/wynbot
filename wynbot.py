@@ -37,8 +37,12 @@ def build_text_model():
 
 
 def main():
+    '''
+    Login to Hangouts, send generated message and disconnect.
+    '''
     # Build the text model using markovify
     model = build_text_model()
+    markov_chain = model.make_sentence()
 
     # Setup Hangouts bot instance, override 'message' method
     class HangoutsBot(HangoutsClient):
@@ -48,17 +52,12 @@ def main():
                 markov_chain = model.make_sentence()
                 msg.reply(markov_chain).send()
 
-        def group_message(self, msg):
-            logging.debug('Sending group message')
-            if msg['type'] in ('groupchat', 'chat', 'normal'):
-                markov_chain = model.make_sentence()
-                msg.reply(markov_chain).send()
-
     hangouts = HangoutsBot('wynbot.ini')
     # Connect to Hangouts and start processing XMPP stanzas.
     if hangouts.connect(address=('talk.google.com', 5222),
                         reattempt=True, use_tls=True):
         hangouts.process(block=False)
+        logging.info("Finished sending today's message.")
     else:
         logging.error('Unable to connect to Hangouts.')
 

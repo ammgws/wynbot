@@ -5,8 +5,8 @@ import simplejson as json
 
 
 def main():
-    filename = 'hangouts.json'
-    friend_id = 'UgwpNx2Do2FFgMUbNFR4AaABAQ'  # wyn
+    filename = 'hangouts.json'  # Hangouts chat log file from Google Checkout
+    friend_id = 'xxxxxxxx'  # conversation ID to extract from Hangouts chat log
 
     data = json.load(open(filename, 'rb'))
 

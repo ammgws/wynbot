@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 # Imports from Python Standard Library
 import datetime as dt
 import logging
-from sys import path
+from time import sleep
 from urllib.parse import urlencode
 
 # Third party imports
@@ -14,16 +12,17 @@ from sleekxmpp import ClientXMPP
 from sleekxmpp.exceptions import IqError, IqTimeout
 from sleekxmpp.xmlstream import cert
 
-# Get absolute path of the dir script is run from
-cwd = path[0]  # pylint: disable=C0103
-
 
 class HangoutsClient(ClientXMPP):
     '''
-    Client for connecting to Hangouts
+    Client for connecting to Hangouts, sending a message to all users in the
+    roster, and then disconnecting.
     '''
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, message):
+        # Initialise parameters
+        self.message = message
+
         # Read in config values
         self.config = ConfigParser()
         self.config.read(config_path)
@@ -41,13 +40,13 @@ class HangoutsClient(ClientXMPP):
         self.google_authenticate()
 
         # Get email address for Hangouts login
-        ammcon_email = self.google_get_email()
-        logging.debug('[Hangouts] Going to login using: %s', ammcon_email)
+        hangouts_login_email = self.google_get_email()
+        logging.debug('[Hangouts] Going to login using: %s', hangouts_login_email)
 
         # Setup new SleekXMPP client to connect to Hangouts.
-        # Not passing in password arg as using OAUTH2 to login
+        # Not passing in actual password since using OAUTH2 to login
         ClientXMPP.__init__(self,
-                            jid=ammcon_email,
+                            jid=hangouts_login_email,
                             password=None,
                             sasl_mech='X-OAUTH2')
         self.auto_reconnect = True  # Restart stream in the event of an error
@@ -64,22 +63,13 @@ class HangoutsClient(ClientXMPP):
         # XMPP client establishes its connection with the server
         # and the XML streams are ready for use. We want to
         # listen for this event so that we can initialize our roster.
-        self.add_event_handler('session_start', self.start)
-
-        # Triggered whenever a message stanza is received.
-        # Note this includes MUC and error messages.
-        self.add_event_handler('message', self.message)
+        # We need threaded=True so that the session_start handler doesn't
+        # block event processing while we wait for presence stanzas to arrive.
+        self.add_event_handler("session_start", self.start, threaded=True)
 
         # Triggered whenever a 'connected' xmpp event is stanza is received,
         # in particular when connection to xmpp server is established.
         # Fetches a new access token and updates the class' access_token value.
-        # This is a workaround for a bug I've encountered when SleekXMPP
-        # attempts to reconnect, but fails due to using an old access token.
-        # Access token is first set when initialising the client, however since
-        # Google access tokens expire after one hour, if SleekXMPP attempts a
-        # reconnect after one hour has passed, the sasl_mechanism will submit
-        # the old access token and end up failing ('failed_auth') and the
-        # server instance is ended.
         self.add_event_handler('connected', self.reconnect_workaround)
 
         # Using a Google Apps custom domain, the certificate
@@ -93,8 +83,7 @@ class HangoutsClient(ClientXMPP):
         ''' Workaround for SleekXMPP reconnect.
         If a reconnect is attempted after access token is expired,
         auth fails and the client is stopped. Get around this by updating the
-        access token whenever the client establishes a connection to the XMPP
-        server. Byproduct is that access token is requested twice upon startup.
+        access token whenever the client establishes a connection to the server.
         '''
         self.google_authenticate()
         self.credentials['access_token'] = self.access_token
@@ -106,21 +95,15 @@ class HangoutsClient(ClientXMPP):
             cert.verify('talk.google.com', der_cert)
             logging.debug("[Hangouts] Found Hangouts certificate")
         except cert.CertificateError as err:
-            
+            logging.error(err)
             self.disconnect(send_close=False)
 
     def start(self, event):  # pylint: disable=W0613
         '''
         Process the session_start event.
 
-        Typical actions for the session_start event are
-        requesting the roster and broadcasting an initial
-        presence stanza.
-
-        Like every event handler this accepts a single parameter which
-        typically is the stanza that was received that caused the event.
-        In this case, event will just be an empty dictionary,
-        since there is no associated data.
+        Broadcast initial presence stanza, request the roster,
+        and then send the message to the specified user(s).
 
         Args:
             event -- An empty dictionary. The session_start
@@ -128,8 +111,10 @@ class HangoutsClient(ClientXMPP):
                      data.
         '''
 
+        # Broadcast initial presence stanza
         self.send_presence()
 
+        # Request the roster
         try:
             self.get_roster()
         except IqError as err:
@@ -140,10 +125,14 @@ class HangoutsClient(ClientXMPP):
             logging.error('[Hangouts] Server is taking too long to respond')
             self.disconnect(send_close=False)
 
-        self.send_message(mto=self.recipient, mbody=self.msg)
-        
-        self.disconnect(wait=True)
+        # Wait for presence stanzas to be received, otherwise roster will be empty
+        sleep(5)
 
+        for recipient in self.client_roster:
+            self.send_message(mto=recipient, mbody=self.message, mtype='chat')
+
+        # Wait for all message stanzas to be sent before disconnecting
+        self.disconnect(wait=True)
 
     def google_authenticate(self):
         ''' Get access token for Hangouts login.

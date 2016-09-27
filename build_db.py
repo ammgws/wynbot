@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # standard library
 import datetime as dt
 # third party
@@ -28,7 +30,11 @@ def main():
                                 timestamp = dt.datetime.fromtimestamp(timestamp_us/1000000)  # convert to epoch seconds
                                 timestamp_str = timestamp.strftime("%Y%m%d_%Hh%Mm%Ss.%f")
                                 try:
-                                    chat_log_dict[timestamp_str] = line['text'] + '.'
+                                    message_text = line['text']
+                                    # Append period if sentence is not otherwise punctuated
+                                    if not message_text.endswith(('.', '!', '?')):
+                                        message_text = message_text + '.'
+                                    chat_log_dict[timestamp_str] = message_text
                                 except:
                                     pass
 

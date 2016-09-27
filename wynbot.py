@@ -1,39 +1,45 @@
+#!/usr/bin/env python3
+
 # standard library
 import datetime as dt
 import json
 import logging
-import logging.handlers
+import os.path
+from sys import path
 # third party
 import markovify
 from hangoutsclient import HangoutsClient
 
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
 
+# Get absolute path of the dir script is run from
+CWD = path[0]  # pylint: disable=C0103
+
+
 def _load_db():
-    """
+    '''
     Reads 'database' from a JSON file on disk.
-    Returns a dictionary keyed by unique message permalinks.
-    """
+    Returns a dictionary keyed by unique timestamps (Hangouts us timestamp).
+    '''
     try:
-        with open('message_db.json', 'r') as json_file:
+        with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
             messages = json.loads(json_file.read())
     except IOError:
-        with open('message_db.json', 'w') as json_file:
-             json_file.write('{}')
+        with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
+            json_file.write('{}')
         messages = {}
 
     return messages
 
 
-# get all messages, build a giant text corpus
 def build_text_model():
-    """
-    Read the latest 'database' off disk and build a new markov
+    '''
+    Read the latest 'database' off disk and build a new Markov
     chain generator model.
     Returns TextModel.
-    """
+    '''
     messages = _load_db()
-    return markovify.Text(" ".join(messages.values()), state_size=2)
+    return markovify.Text(''.join(messages.values()), state_size=2)
 
 
 def main():
@@ -41,22 +47,17 @@ def main():
     Login to Hangouts, send generated message and disconnect.
     '''
     # Build the text model using markovify
-    model = build_text_model()
-    markov_chain = model.make_sentence()
+    text_model = build_text_model()
+    # markov_chain = text_model.make_sentence()
+    markov_chain = text_model.make_short_sentence(140) or "failed to generate message"
 
-    # Setup Hangouts bot instance, override 'message' method
-    class HangoutsBot(HangoutsClient):
-        def message(self, msg):
-            logging.debug('Sending standard message')
-            if msg['type'] in ('groupchat', 'chat', 'normal'):
-                markov_chain = model.make_sentence()
-                msg.reply(markov_chain).send()
+    # Setup Hangouts bot instance
+    hangouts = HangoutsClient(os.path.join(CWD, 'wynbot.ini'), markov_chain)
 
-    hangouts = HangoutsBot('wynbot.ini')
     # Connect to Hangouts and start processing XMPP stanzas.
     if hangouts.connect(address=('talk.google.com', 5222),
                         reattempt=True, use_tls=True):
-        hangouts.process(block=False)
+        hangouts.process(block=True)
         logging.info("Finished sending today's message.")
     else:
         logging.error('Unable to connect to Hangouts.')
@@ -65,10 +66,8 @@ if __name__ == '__main__':
     # Configure root logger. Level 5 = verbose to catch mostly everything.
     logger = logging.getLogger()
     logger.setLevel(level=5)
-    log_filename = 'wynbot_{0}.log'.format(dt.datetime.now().strftime("%Y%m%d_%Hh%Mm%Ss"))
-    log_handler = logging.handlers.RotatingFileHandler(log_filename,
-                                                       maxBytes=5242880,
-                                                       backupCount=3)
+    log_filename = 'wynbot_{0}.log'.format(dt.datetime.now().strftime('%Y%m%d_%Hh%Mm%Ss'))
+    log_handler = logging.FileHandler(os.path.join(CWD, 'logs', log_filename))
     log_format = logging.Formatter(fmt='%(asctime)s.%(msecs).03d %(name)-12s %(levelname)-8s %(message)s (%(filename)s:%(lineno)d)',
                                    datefmt='%Y-%m-%d %H:%M:%S')
     log_handler.setFormatter(log_format)

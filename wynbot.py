@@ -18,8 +18,8 @@ CWD = path[0]  # pylint: disable=C0103
 
 def _load_db():
     '''
-    Reads 'database' from a JSON file on disk.
-    Returns a dictionary keyed by unique timestamps (Hangouts us timestamp).
+    Reads in Hangouts chat logs from JSON file (exported from Google Takeout).
+    Returns a dictionary keyed by unique timestamps (Hangouts us timestamps).
     '''
     try:
         with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
@@ -34,8 +34,7 @@ def _load_db():
 
 def build_text_model():
     '''
-    Read the latest 'database' off disk and build a new Markov
-    chain generator model.
+    Load database script dir and build a new Markov chain generator model.
     Returns TextModel.
     '''
     messages = _load_db()

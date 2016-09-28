@@ -59,31 +59,30 @@ class HangoutsClient(ClientXMPP):
         self.register_plugin('xep_0004')  # Data Forms
         self.register_plugin('xep_0199')  # XMPP Ping
 
-        # The session_start event will be triggered when the
-        # XMPP client establishes its connection with the server
-        # and the XML streams are ready for use. We want to
-        # listen for this event so that we can initialize our roster.
-        # We need threaded=True so that the session_start handler doesn't
-        # block event processing while we wait for presence stanzas to arrive.
+        # The session_start event will be triggered when the XMPP client
+        # establishes its connection with the server and the XML streams are
+        # ready for use. We want to listen for this event so that we can
+        # initialize our roster. Need threaded=True so that the session_start
+        # handler doesn't block event processing while we wait for presence
+        # stanzas to arrive.
         self.add_event_handler("session_start", self.start, threaded=True)
 
-        # Triggered whenever a 'connected' xmpp event is stanza is received,
-        # in particular when connection to xmpp server is established.
+        # Triggered whenever a 'connected' XMPP event is stanza is received,
+        # in particular when connection to XMPP server is established.
         # Fetches a new access token and updates the class' access_token value.
         self.add_event_handler('connected', self.reconnect_workaround)
 
-        # Using a Google Apps custom domain, the certificate
-        # does not contain the custom domain, just the GTalk
-        # server name. So we will need to process invalid
-        # certifcates ourselves and check that it really
-        # is from Google.
+        # When using a Google Apps custom domain, the certificate does not
+        # contain the custom domain, just the Hangouts server name. So we will
+        # need to process invalid certifcates ourselves and check that it
+        # really is from Google.
         self.add_event_handler("ssl_invalid_cert", self.invalid_cert)
 
     def reconnect_workaround(self, event):  # pylint: disable=W0613
         ''' Workaround for SleekXMPP reconnect.
-        If a reconnect is attempted after access token is expired,
-        auth fails and the client is stopped. Get around this by updating the
-        access token whenever the client establishes a connection to the server.
+        If a reconnect is attempted after access token is expired, auth fails
+        and the client is stopped. Get around this by updating the access
+        token whenever the client establishes a connection to the server.
         '''
         self.google_authenticate()
         self.credentials['access_token'] = self.access_token
@@ -106,9 +105,8 @@ class HangoutsClient(ClientXMPP):
         and then send the message to the specified user(s).
 
         Args:
-            event -- An empty dictionary. The session_start
-                     event does not provide any additional
-                     data.
+            event -- An empty dictionary. The session_start event does not
+                     provide any additional data.
         '''
 
         # Broadcast initial presence stanza
@@ -128,6 +126,7 @@ class HangoutsClient(ClientXMPP):
         # Wait for presence stanzas to be received, otherwise roster will be empty
         sleep(5)
 
+        # Send message to each user found in the roster
         for recipient in self.client_roster:
             self.send_message(mto=recipient, mbody=self.message, mtype='chat')
 
@@ -142,9 +141,10 @@ class HangoutsClient(ClientXMPP):
         if not self.refresh_token:
             # If no refresh token is found in config file, then need to start
             # new authorization flow and get access token that way.
-            # Note: Google has limit of 25 refresh tokens per user account per client.
-            # When limit reached, creating a new token automatically invalidates the
-            # oldest token without warning. (Limit does not apply to service accounts.)
+            # Note: Google has limit of 25 refresh tokens per user account per
+            # client. When limit reached, creating a new token automatically
+            # invalidates the oldest token without warning.
+            # (Limit does not apply to service accounts.)
             # https://developers.google.com/accounts/docs/OAuth2#expiration
             logging.debug('[Hangouts] No refresh token in config file (val = %s of type %s). '
                           'Need to generate new token.',

@@ -125,16 +125,15 @@ class HangoutsClient(ClientXMPP):
 
         # Wait for presence stanzas to be received, otherwise roster will be empty
         sleep(5)
-        logging.info('Wynbot JID: %s', self.boundjid)
 
         # Send message to each user found in the roster
         num_users = 0
         for recipient in self.client_roster:
             if recipient != self.boundjid:
                 num_users = num_users + 1
-                logging.info('Sending to: %s', recipient)
+                logging.info('Sending to: %s (%s)', self.client_roster[recipient]['name'], recipient)
                 self.send_message(mto=recipient, mbody=self.message, mtype='chat')
-                        
+
         logging.info('Sent message to %s users in roster', num_users)
 
         # Wait for all message stanzas to be sent before disconnecting

@@ -5,6 +5,7 @@ import datetime as dt
 import json
 import logging
 import os.path
+from os import nice  # Linux only
 from sys import path
 # third party
 import markovify
@@ -45,6 +46,11 @@ def main():
     '''
     Login to Hangouts, send generated message and disconnect.
     '''
+    
+    # Set python process to max niceness in order to use less CPU, as CPU hits
+    # 100% on rPi when generating Markov model. (Don't want to slow webserver.)
+    nice(20)
+    
     # Build the text model using markovify
     text_model = build_text_model()
     # markov_chain = text_model.make_sentence()

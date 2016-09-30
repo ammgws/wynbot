@@ -1,13 +1,13 @@
 # Imports from Python Standard Library
 import datetime as dt
 import logging
+import ssl
 from time import sleep
 from urllib.parse import urlencode
 
 # Third party imports
 from configparser import ConfigParser
 import requests
-import ssl
 from sleekxmpp import ClientXMPP
 from sleekxmpp.exceptions import IqError, IqTimeout
 from sleekxmpp.xmlstream import cert
@@ -27,7 +27,7 @@ class HangoutsClient(ClientXMPP):
         self.config = ConfigParser()
         self.config.read(config_path)
         self.config_path = config_path
-        logging.debug('[Hangouts] Using config file: %s', config_path)
+        logging.debug('Using config file: %s', config_path)
 
         # Get Hangouts OAUTH info from config file
         self.client_id = self.config.get('General', 'client_id')
@@ -41,7 +41,7 @@ class HangoutsClient(ClientXMPP):
 
         # Get email address for Hangouts login
         hangouts_login_email = self.google_get_email()
-        logging.debug('[Hangouts] Going to login using: %s', hangouts_login_email)
+        logging.debug('Going to login using: %s', hangouts_login_email)
 
         # Setup new SleekXMPP client to connect to Hangouts.
         # Not passing in actual password since using OAUTH2 to login
@@ -92,7 +92,7 @@ class HangoutsClient(ClientXMPP):
         der_cert = ssl.PEM_cert_to_DER_cert(pem_cert)
         try:
             cert.verify('talk.google.com', der_cert)
-            logging.debug("[Hangouts] Found Hangouts certificate")
+            logging.debug("Found Hangouts certificate")
         except cert.CertificateError as err:
             logging.error(err)
             self.disconnect(send_close=False)
@@ -116,19 +116,26 @@ class HangoutsClient(ClientXMPP):
         try:
             self.get_roster()
         except IqError as err:
-            logging.error('[Hangouts] There was an error getting the roster')
+            logging.error('There was an error getting the roster')
             logging.error(err.iq['error']['condition'])
             self.disconnect()
         except IqTimeout:
-            logging.error('[Hangouts] Server is taking too long to respond')
+            logging.error('Server is taking too long to respond')
             self.disconnect(send_close=False)
 
         # Wait for presence stanzas to be received, otherwise roster will be empty
         sleep(5)
+        logging.info('Wynbot JID: %s', self.boundjid)
 
         # Send message to each user found in the roster
+        num_users = 0
         for recipient in self.client_roster:
-            self.send_message(mto=recipient, mbody=self.message, mtype='chat')
+            if recipient != self.boundjid:
+                num_users = num_users + 1
+                logging.info('Sending to: %s', recipient)
+                self.send_message(mto=recipient, mbody=self.message, mtype='chat')
+                        
+        logging.info('Sent message to %s users in roster', num_users)
 
         # Wait for all message stanzas to be sent before disconnecting
         self.disconnect(wait=True)
@@ -146,7 +153,7 @@ class HangoutsClient(ClientXMPP):
             # invalidates the oldest token without warning.
             # (Limit does not apply to service accounts.)
             # https://developers.google.com/accounts/docs/OAuth2#expiration
-            logging.debug('[Hangouts] No refresh token in config file (val = %s of type %s). '
+            logging.debug('No refresh token in config file (val = %s of type %s). '
                           'Need to generate new token.',
                           self.refresh_token,
                           type(self.refresh_token))
@@ -160,12 +167,12 @@ class HangoutsClient(ClientXMPP):
                 self.config.write(config_file)
         elif (self.access_token is None) or (dt.datetime.now() > self.token_expiry):
             # Use existing refresh token to get new access token.
-            logging.debug('[Hangouts] Using refresh token to generate new access token.')
+            logging.debug('Using refresh token to generate new access token.')
             # Request access token using existing refresh token
             self.google_token_request()
         else:
             # Access token is still valid, no need to generate new access token.
-            logging.debug('[Hangouts] Access token is still valid - no need to regenerate.')
+            logging.debug('Access token is still valid - no need to regenerate.')
             return
 
     def google_authorisation_request(self):
@@ -231,7 +238,7 @@ class HangoutsClient(ClientXMPP):
         if auth_code:  # Need to save value of new refresh token
             self.refresh_token = values['refresh_token']
         self.token_expiry = dt.datetime.now() + dt.timedelta(seconds=int(values['expires_in']))
-        logging.info('[Hangouts] Access token expires on %s', self.token_expiry.strftime("%Y/%m/%d %H:%M"))
+        logging.info('Access token expires on %s', self.token_expiry.strftime("%Y/%m/%d %H:%M"))
 
     def google_get_email(self):
         '''Get email address for Hangouts login.'''

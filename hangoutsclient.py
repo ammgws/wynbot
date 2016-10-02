@@ -2,11 +2,11 @@
 import datetime as dt
 import logging
 import ssl
+from configparser import ConfigParser
 from time import sleep
 from urllib.parse import urlencode
 
 # Third party imports
-from configparser import ConfigParser
 import requests
 from sleekxmpp import ClientXMPP
 from sleekxmpp.exceptions import IqError, IqTimeout

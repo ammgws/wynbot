@@ -33,7 +33,7 @@ def main():
                                     message_text = line['text']
                                     # Append period if sentence is not otherwise punctuated
                                     if not message_text.endswith(('.', '!', '?')):
-                                        message_text = message_text + '.'
+                                        message_text += '.'
                                     chat_log_dict[timestamp_str] = message_text
                                 except:
                                     pass

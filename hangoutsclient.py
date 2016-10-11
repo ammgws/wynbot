@@ -14,10 +14,10 @@ from sleekxmpp.xmlstream import cert
 
 
 class HangoutsClient(ClientXMPP):
-    '''
+    """
     Client for connecting to Hangouts, sending a message to all users in the
     roster, and then disconnecting.
-    '''
+    """
 
     def __init__(self, config_path, message):
         # Initialise parameters
@@ -74,21 +74,21 @@ class HangoutsClient(ClientXMPP):
 
         # When using a Google Apps custom domain, the certificate does not
         # contain the custom domain, just the Hangouts server name. So we will
-        # need to process invalid certifcates ourselves and check that it
+        # need to process invalid certificates ourselves and check that it
         # really is from Google.
         self.add_event_handler("ssl_invalid_cert", self.invalid_cert)
 
     def reconnect_workaround(self, event):  # pylint: disable=W0613
-        ''' Workaround for SleekXMPP reconnect.
+        """ Workaround for SleekXMPP reconnect.
         If a reconnect is attempted after access token is expired, auth fails
         and the client is stopped. Get around this by updating the access
         token whenever the client establishes a connection to the server.
-        '''
+        """
         self.google_authenticate()
         self.credentials['access_token'] = self.access_token
 
     def invalid_cert(self, pem_cert):
-        ''' Verify that certificate originates from Google. '''
+        """ Verify that certificate originates from Google. """
         der_cert = ssl.PEM_cert_to_DER_cert(pem_cert)
         try:
             cert.verify('talk.google.com', der_cert)
@@ -98,7 +98,7 @@ class HangoutsClient(ClientXMPP):
             self.disconnect(send_close=False)
 
     def start(self, event):  # pylint: disable=W0613
-        '''
+        """
         Process the session_start event.
 
         Broadcast initial presence stanza, request the roster,
@@ -107,7 +107,7 @@ class HangoutsClient(ClientXMPP):
         Args:
             event -- An empty dictionary. The session_start event does not
                      provide any additional data.
-        '''
+        """
 
         # Broadcast initial presence stanza
         self.send_presence()
@@ -130,7 +130,7 @@ class HangoutsClient(ClientXMPP):
         num_users = 0
         for recipient in self.client_roster:
             if recipient != self.boundjid:
-                num_users = num_users + 1
+                num_users += 1
                 logging.info('Sending to: %s (%s)', self.client_roster[recipient]['name'], recipient)
                 self.send_message(mto=recipient, mbody=self.message, mtype='chat')
 
@@ -140,9 +140,9 @@ class HangoutsClient(ClientXMPP):
         self.disconnect(wait=True)
 
     def google_authenticate(self):
-        ''' Get access token for Hangouts login.
+        """ Get access token for Hangouts login.
         Note that Google access token expires in 3600 seconds.
-        '''
+        """
         # Authenticate with Google and get access token for Hangouts
         if not self.refresh_token:
             # If no refresh token is found in config file, then need to start
@@ -175,7 +175,7 @@ class HangoutsClient(ClientXMPP):
             return
 
     def google_authorisation_request(self):
-        '''Start authorisation flow to get new access + refresh token.'''
+        """Start authorisation flow to get new access + refresh token."""
 
         # Start by getting authorization_code for Hangouts scope.
         # Email scope is used to get email address for Hangouts login.
@@ -198,7 +198,7 @@ class HangoutsClient(ClientXMPP):
         return auth_code
 
     def google_token_request(self, auth_code=None):
-        '''Make an access token request and get new token(s).
+        """Make an access token request and get new token(s).
            If auth_code is passed then both access and refresh tokens will be
            requested, otherwise the existing refresh token is used to request
            an access token.
@@ -207,7 +207,7 @@ class HangoutsClient(ClientXMPP):
             access_token
             refresh_token
             token_expiry
-           '''
+           """
         # Build request parameters. Order doesn't seem to matter, hence using dict.
         token_request_data = {
             'client_id': self.client_id,
@@ -240,7 +240,7 @@ class HangoutsClient(ClientXMPP):
         logging.info('Access token expires on %s', self.token_expiry.strftime("%Y/%m/%d %H:%M"))
 
     def google_get_email(self):
-        '''Get email address for Hangouts login.'''
+        """Get email address for Hangouts login."""
         authorization_header = {"Authorization": "OAuth %s" % self.access_token}
         resp = requests.get("https://www.googleapis.com/oauth2/v2/userinfo",
                             headers=authorization_header)

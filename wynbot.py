@@ -6,7 +6,9 @@ import json
 import logging
 import os.path
 from os import nice  # Linux only
+from random import randint
 from sys import path
+from time import sleep
 # third party
 import markovify
 from hangoutsclient import HangoutsClient
@@ -46,11 +48,16 @@ def main():
     '''
     Login to Hangouts, send generated message and disconnect.
     '''
-    
+
     # Set python process to max niceness in order to use less CPU, as CPU hits
     # 100% on rPi when generating Markov model. (Don't want to slow webserver.)
     nice(20)
-    
+
+    # Sleep random amount of time so messages are sent at a different time everyday
+    delay = randint(1, 8*60*60)  # range of 1s to 8 hours
+    logging.info('Sleeping for %s seconds!', delay)
+    sleep(delay)
+
     # Build the text model using markovify
     text_model = build_text_model()
     # markov_chain = text_model.make_sentence()

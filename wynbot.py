@@ -50,8 +50,10 @@ def build_text_model(from_file='markov_chain.json'):
         logging.info('Creating new chain file.')
         markov_chain = None
 
+    logging.debug('Loading corpus.')
     messages = load_corpus()
-    text_model = markovify.Text(''.join(messages.values()), state_size=2)
+    logging.debug('Creating text model.')
+    text_model = markovify.Text(''.join(messages.values()), state_size=2, chain=markov_chain)
 
     if not markov_chain:
         # save our newly created text_model for the next time script is run
@@ -81,7 +83,6 @@ def main(arguments):
     sleep(delay)
 
     # Build the text model using markovify
-    logging.info('Starting build of Markov model.')
     text_model = build_text_model()
     logging.debug('Starting message generation.')
     # markov_chain = text_model.make_sentence()

@@ -4,8 +4,11 @@
 import datetime as dt
 import json
 import logging
+import nltk
 import os.path
+import re
 from argparse import ArgumentParser
+from configparser import ConfigParser
 from os import nice  # Linux only
 from random import randint
 from sys import path
@@ -20,26 +23,34 @@ from hangoutsclient import HangoutsClient
 CWD = path[0]  # pylint: disable=C0103
 
 
-def load_corpus():
+def load_corpus(filename):
     """
-    Reads in Hangouts chat logs from JSON file (exported from Google Takeout).
-    Returns a dictionary keyed by unique timestamps (Hangouts us timestamps).
+    Reads in Hangouts chat log data from text file or JSON file.
+    Returns a list of all the messages in the file.
     """
-    try:
-        with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
-            messages = json.loads(json_file.read())
-    except IOError:
-        with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
-            json_file.write('{}')
-        messages = {}
 
-    return messages
+    if filename.endswith('.txt'):
+        with open("corpus.txt", 'r', encoding="utf-8") as f:
+            text = f.read()
+    elif filename.endswith('.json'):
+        try:
+            with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
+                messages = json.loads(json_file.read())
+        except IOError:
+            with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
+                json_file.write('{}')
+            messages = {}
+        text = ''.join(messages.values())
+    else:
+        text = ''
+
+    return text
 
 
-def build_text_model(from_file='markov_chain.json'):
+def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
     """
     Build a new Markov chain generator model.
-    Returns TextModel.
+    Returns markovify Text instance.
     """
     if os.path.exists(from_file):
         logging.info('Loading chain file.')
@@ -51,15 +62,18 @@ def build_text_model(from_file='markov_chain.json'):
         markov_chain = None
 
     logging.debug('Loading corpus.')
-    messages = load_corpus()
+    corpus = load_corpus('corpus.txt')
     logging.debug('Creating text model.')
-    text_model = markovify.Text(''.join(messages.values()), state_size=2, chain=markov_chain)
+    if use_nltk:
+        text_model = POSifiedText(corpus, state_size=state_size, chain=markov_chain)
+    else:
+        text_model = markovify.Text(corpus, state_size=state_size, chain=markov_chain)
 
     if not markov_chain:
         # save our newly created text_model for the next time script is run
         with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.chain.to_json())
-
+    print(type(text_model))
     return text_model
 
 
@@ -68,6 +82,15 @@ def main(arguments):
     Login to Hangouts, send generated message and disconnect.
     """
     args = parse_arguments(arguments)
+
+    # Path to config file
+    config_path = os.path.join(CWD, 'wynbot.ini')
+
+    # Read in config values
+    config = ConfigParser()
+    config.read(config_path)
+    config_path = config_path
+    logging.debug('Using config file: %s', config_path)
 
     # Set python process to max niceness in order to use less CPU, as CPU hits
     # 100% on rPi when generating Markov model. (Don't want to slow webserver.)
@@ -83,14 +106,13 @@ def main(arguments):
     sleep(delay)
 
     # Build the text model using markovify
-    text_model = build_text_model()
+    text_model = build_text_model(args.state_size, args.use_nltk)
     logging.debug('Starting message generation.')
-    # markov_chain = text_model.make_sentence()
-    markov_chain = text_model.make_short_sentence(140) or "failed to generate message"
-    logging.info('Generated message: %s', markov_chain)
+    message = text_model.make_short_sentence(args.num_chars) or "failed to generate message"
+    logging.info('Generated message: %s', message)
 
     # Setup Hangouts bot instance
-    hangouts = HangoutsClient(os.path.join(CWD, 'wynbot.ini'), markov_chain)
+    hangouts = HangoutsClient(config_path, message)
 
     # Connect to Hangouts and start processing XMPP stanzas.
     if hangouts.connect(address=('talk.google.com', 5222),
@@ -103,11 +125,23 @@ def main(arguments):
 
 def parse_arguments(arguments):
     # Get command line arguments
-    parser = ArgumentParser(description='Send command to Sharp AQUOS TV.')
+    parser = ArgumentParser(description='Send Markov generated message.')
     parser.add_argument('-d', '--delay',
                         dest='delay',
                         type=int, default=-1,
                         help='Set delay before script enters main subroutine.')
+    parser.add_argument('-c', '--characters',
+                        dest='num_chars',
+                        type=int, default=140,
+                        help='Set the max chacter length for the generated message.')
+    parser.add_argument('-n', '--natural',
+                        dest='use_nltk',
+                        type=int, default=0,
+                        help='Set whether to use ntlk or not (much slower than standard Markov).')
+    parser.add_argument('-s', '--statesize',
+                        dest='state_size',
+                        type=int, default=2,
+                        help='Set the state size for Markov model.')
     return parser.parse_args(arguments)
 
 
@@ -126,6 +160,18 @@ def configure_logging():
     logging.getLogger('requests').setLevel(logging.WARNING)
     # Quieten SleekXMPP output
     # logging.getLogger('sleekxmpp.xmlstream.xmlstream').setLevel(logging.INFO)
+
+
+class POSifiedText(markovify.Text):
+    def word_split(self, sentence):
+        words = re.split(self.word_split_pattern, sentence)
+        words = ['::'.join(tag) for tag in nltk.pos_tag(words)]
+        return words
+
+    def word_join(self, words):
+        sentence = ' '.join(word.split('::')[0] for word in words)
+        return sentence
+
 
 if __name__ == '__main__':
     from sys import argv  # pylint: disable=C0412

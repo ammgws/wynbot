@@ -30,9 +30,9 @@ class HangoutsClient(ClientXMPP):
         logging.debug('Using config file: %s', config_path)
 
         # Get Hangouts OAUTH info from config file
-        self.client_id = self.config.get('General', 'client_id')
-        self.client_secret = self.config.get('General', 'client_secret')
-        self.refresh_token = self.config.get('General', 'refresh_token')
+        self.client_id = self.config.get('Hangouts', 'client_id')
+        self.client_secret = self.config.get('Hangouts', 'client_secret')
+        self.refresh_token = self.config.get('Hangouts', 'refresh_token')
 
         # Generate access token
         self.token_expiry = None

@@ -65,6 +65,7 @@ def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
     corpus = load_corpus('corpus.txt')
     logging.debug('Creating text model.')
     if use_nltk:
+        nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
         text_model = POSifiedText(corpus, state_size=state_size, chain=markov_chain)
     else:
         text_model = markovify.Text(corpus, state_size=state_size, chain=markov_chain)

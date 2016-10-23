@@ -56,14 +56,21 @@ def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
         logging.info('Loading chain file.')
         with open(from_file, 'r') as json_file:
             markov_json = json.load(json_file)
-        markov_chain = markovify.Chain.from_json(markov_json)
+        if len(markov_json[0][0]) != state_size:
+            logging.info('State size mismatch. Chain file: %s, requested state size: %s.', len(markov_json[0][0]),
+                         state_size)
+            markov_chain = None
+        else:
+            markov_chain = markovify.Chain.from_json(markov_json)
     else:
-        logging.info('Creating new chain file.')
         markov_chain = None
+
+    if not markov_chain:
+        logging.info('Creating new chain file.')
 
     logging.debug('Loading corpus.')
     corpus = load_corpus('corpus.txt')
-    logging.debug('Creating text model.')
+    logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
         nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
         text_model = POSifiedText(corpus, state_size=state_size, chain=markov_chain)
@@ -74,7 +81,6 @@ def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
         # save our newly created text_model for the next time script is run
         with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.chain.to_json())
-    print(type(text_model))
     return text_model
 
 
@@ -108,9 +114,9 @@ def main(arguments):
 
     # Build the text model using markovify
     text_model = build_text_model(args.state_size, args.use_nltk)
-    logging.debug('Starting message generation.')
+    logging.debug('Starting message generation. Max. chars: %s', args.num_chars)
     message = text_model.make_short_sentence(args.num_chars) or "failed to generate message"
-    logging.info('Generated message: %s', message)
+    logging.info('Generated message: "%s" of %s chars', message, len(message))
 
     # Setup Hangouts bot instance
     hangouts = HangoutsClient(config_path, message)

@@ -59,28 +59,27 @@ def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
         if len(markov_json[0][0]) != state_size:
             logging.info('State size mismatch. Chain file: %s, requested state size: %s.', len(markov_json[0][0]),
                          state_size)
-            markov_chain = None
-        else:
-            markov_chain = markovify.Chain.from_json(markov_json)
+            markov_json = None
     else:
-        markov_chain = None
-
-    if not markov_chain:
-        logging.info('Creating new chain file.')
+        markov_json = None
 
     logging.debug('Loading corpus.')
     corpus = load_corpus('corpus.txt')
     logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
+        logging.debug('Using nltk')
         nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
-        text_model = POSifiedText(corpus, state_size=state_size, chain=markov_chain)
+        text_model = POSifiedText.from_chain(markov_json, corpus=corpus)
+    elif markov_json:
+        logging.debug('Usign existing chain file.')
+        text_model = markovify.Text.from_chain(markov_json, corpus=corpus)
     else:
-        text_model = markovify.Text(corpus, state_size=state_size, chain=markov_chain)
-
-    if not markov_chain:
-        # save our newly created text_model for the next time script is run
+        logging.debug('Creating new chain file.')
+        text_model = markovify.Text(corpus, state_size=state_size, chain=None)
+        # save our newly created Markov chain for the next time script is run
         with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.chain.to_json())
+
     return text_model
 
 
@@ -103,10 +102,10 @@ def main(arguments):
     # 100% on rPi when generating Markov model. (Don't want to slow webserver.)
     nice(20)
 
+    # Sleep random amount of time so messages are sent at a different time everyday
     if args.delay >= 0:
         delay = args.delay
     else:
-        # Sleep random amount of time so messages are sent at a different time everyday
         delay = randint(1, 8 * 60 * 60)  # range of 1s to 8 hours
     delay_date = dt.datetime.now() + dt.timedelta(seconds=delay)
     logging.info('Sleeping for %s seconds, continue at %s', delay, delay_date.strftime("%Y/%m/%d %H:%M:%S"))
@@ -116,7 +115,7 @@ def main(arguments):
     text_model = build_text_model(args.state_size, args.use_nltk)
     logging.debug('Starting message generation. Max. chars: %s', args.num_chars)
     message = text_model.make_short_sentence(args.num_chars) or "failed to generate message"
-    logging.info('Generated message: "%s" of %s chars', message, len(message))
+    logging.info('Generated message (%s chars): "%s"', message, len(message))
 
     # Setup Hangouts bot instance
     hangouts = HangoutsClient(config_path, message)

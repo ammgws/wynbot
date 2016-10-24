@@ -23,16 +23,16 @@ from hangoutsclient import HangoutsClient
 CWD = path[0]  # pylint: disable=C0103
 
 
-def load_corpus(filename):
+def load_corpus(corpus_file):
     """
     Reads in Hangouts chat log data from text file or JSON file.
     Returns a list of all the messages in the file.
     """
 
-    if filename.endswith('.txt'):
-        with open("corpus.txt", 'r', encoding="utf-8") as f:
+    if corpus_file.endswith('.txt'):
+        with open(corpus_file, 'r', encoding="utf-8") as f:
             text = f.read()
-    elif filename.endswith('.json'):
+    elif corpus_file.endswith('.json'):
         try:
             with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
                 messages = json.loads(json_file.read())
@@ -47,14 +47,14 @@ def load_corpus(filename):
     return text
 
 
-def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
+def build_text_model(state_size, use_nltk, corpus_file, chain_file):
     """
     Build a new Markov chain generator model.
     Returns markovify Text instance.
     """
-    if os.path.exists(from_file):
+    if os.path.exists(chain_file):
         logging.info('Loading chain file.')
-        with open(from_file, 'r') as json_file:
+        with open(chain_file, 'r') as json_file:
             markov_json = json.load(json_file)
         if len(markov_json[0][0]) != state_size:
             logging.info('State size mismatch. Chain file: %s, requested state size: %s.', len(markov_json[0][0]),
@@ -64,7 +64,7 @@ def build_text_model(state_size, use_nltk, from_file='markov_chain.json'):
         markov_json = None
 
     logging.debug('Loading corpus.')
-    corpus = load_corpus('corpus.txt')
+    corpus = load_corpus(corpus_file)
     logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
         logging.debug('Using nltk')
@@ -112,7 +112,9 @@ def main(arguments):
     sleep(delay)
 
     # Build the text model using markovify
-    text_model = build_text_model(args.state_size, args.use_nltk)
+    corpus_file = os.path.join(CWD, 'corpus.txt')
+    chain_file = os.path.join(CWD, 'markov_chain.json')
+    text_model = build_text_model(args.state_size, args.use_nltk, corpus_file, chain_file)
     logging.debug('Starting message generation. Max. chars: %s', args.num_chars)
     message = text_model.make_short_sentence(args.num_chars) or "failed to generate message"
     logging.info('Generated message (%s chars): "%s"', message, len(message))

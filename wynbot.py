@@ -71,7 +71,7 @@ def build_text_model(state_size, use_nltk, corpus_file, chain_file):
         nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
         text_model = POSifiedText.from_chain(markov_json, corpus=corpus)
     elif markov_json:
-        logging.debug('Usign existing chain file.')
+        logging.debug('Using existing chain file.')
         text_model = markovify.Text.from_chain(markov_json, corpus=corpus)
     else:
         logging.debug('Creating new chain file.')

@@ -4,17 +4,16 @@
 import datetime as dt
 import json
 import logging
-import nltk
 import os.path
 import re
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from os import nice  # Linux only
 from random import randint
 from sys import path
 from time import sleep
 # third party
 import markovify
+import nltk
 from hangoutsclient import HangoutsClient
 
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
@@ -30,19 +29,14 @@ def load_corpus(corpus_file):
     """
 
     if corpus_file.endswith('.txt'):
-        with open(corpus_file, 'r', encoding="utf-8") as f:
+        with open(corpus_file, 'r', encoding='utf-8') as f:
             text = f.read()
     elif corpus_file.endswith('.json'):
-        try:
-            with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
-                messages = json.loads(json_file.read())
-        except IOError:
-            with open(os.path.join(CWD, 'message_db.json'), 'r') as json_file:
-                json_file.write('{}')
-            messages = {}
+        with open(corpus_file, 'r') as json_file:
+            messages = json.loads(json_file.read())
         text = ''.join(messages.values())
     else:
-        text = ''
+        text = None
 
     return text
 
@@ -50,7 +44,7 @@ def load_corpus(corpus_file):
 def build_text_model(state_size, use_nltk, corpus_file, chain_file):
     """
     Build a new Markov chain generator model.
-    Returns markovify Text instance.
+    Returns a markovify Text instance.
     """
     if os.path.exists(chain_file):
         logging.info('Loading chain file.')
@@ -97,10 +91,6 @@ def main(arguments):
     config.read(config_path)
     config_path = config_path
     logging.debug('Using config file: %s', config_path)
-
-    # Set python process to max niceness in order to use less CPU, as CPU hits
-    # 100% on rPi when generating Markov model. (Don't want to slow webserver.)
-    nice(20)
 
     # Sleep random amount of time so messages are sent at a different time everyday
     if args.delay >= 0:

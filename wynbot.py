@@ -107,7 +107,7 @@ def main(arguments):
     text_model = build_text_model(args.state_size, args.use_nltk, corpus_file, chain_file)
     logging.debug('Starting message generation. Max. chars: %s', args.num_chars)
     message = text_model.make_short_sentence(args.num_chars) or "failed to generate message"
-    logging.info('Generated message (%s chars): "%s"', message, len(message))
+    logging.info('Generated message (%s chars): "%s"', len(message), message)
 
     # Setup Hangouts bot instance
     hangouts = HangoutsClient(config_path, message)

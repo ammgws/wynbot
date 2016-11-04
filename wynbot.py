@@ -32,8 +32,8 @@ def load_corpus(corpus_file):
         with open(corpus_file, 'r', encoding='utf-8') as f:
             text = f.read()
     elif corpus_file.endswith('.json'):
-        with open(corpus_file, 'r') as json_file:
-            messages = json.loads(json_file.read())
+        with open(corpus_file, 'r') as f:
+            messages = json.loads(f.read())
         text = ''.join(messages.values())
     else:
         text = None

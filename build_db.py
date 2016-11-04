@@ -66,7 +66,7 @@ def main():
     selection_choices = {}
     print('{:<3} {:<35} {:<50}'.format('No.', 'Convo ID', 'Participants'))
     for index, (key, value) in enumerate(convos.items(), start=1):
-        print('{:<3} {:<35} {}'.format(index, key, ', '.join(value)))
+        print('{num:<3} {convo_id:<35} {participants}'.format(num=index, convo_id=key, participants=', '.join(value)))
         selection_choices[index] = key
     selection = int(input('Enter no. of conversation to use: '))
     print(selection_choices)
@@ -75,6 +75,7 @@ def main():
     # Generate corpus of message text using the chosen conversation
     corpus = generate_corpus(data, selected_convo_id)
 
+    # Output text file with each message on a new line
     with open('corpus.txt', 'w', encoding='utf-8') as file:
         for line in corpus:
             file.write('{0}\n'.format(line))

@@ -7,7 +7,6 @@ import logging
 import os.path
 import re
 from argparse import ArgumentParser
-from configparser import ConfigParser
 from random import randint
 from sys import path
 from time import sleep
@@ -85,11 +84,6 @@ def main(arguments):
 
     # Path to config file
     config_path = os.path.join(CWD, 'wynbot.ini')
-
-    # Read in config values
-    config = ConfigParser()
-    config.read(config_path)
-    config_path = config_path
     logging.debug('Using config file: %s', config_path)
 
     # Sleep random amount of time so messages are sent at a different time everyday

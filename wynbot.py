@@ -13,7 +13,9 @@ from time import sleep
 # third party
 import markovify
 import nltk
+
 from hangoutsclient import HangoutsClient
+
 
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
 
@@ -21,7 +23,7 @@ from hangoutsclient import HangoutsClient
 CWD = path[0]  # pylint: disable=C0103
 
 
-def load_corpus(corpus_file):
+def load_corpus_text(corpus_file):
     """
     Reads in Hangouts chat log data from text file or JSON file.
     Returns a list of all the messages in the file.
@@ -40,38 +42,41 @@ def load_corpus(corpus_file):
     return text
 
 
-def build_text_model(state_size, use_nltk, corpus_file, chain_file):
+def load_model_json(model_file):
+    if os.path.isfile(model_file):
+        logging.info('Loading model from file.')
+        with open(model_file, 'r') as json_file:
+            markov_json = json.load(json_file)
+    else:
+        # file does not exist
+        markov_json = None
+
+    return markov_json
+
+
+def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
     """
     Build a new Markov chain generator model.
     Returns a markovify Text instance.
     """
-    if os.path.exists(chain_file):
-        logging.info('Loading chain file.')
-        with open(chain_file, 'r') as json_file:
-            markov_json = json.load(json_file)
-        if len(markov_json[0][0]) != state_size:
-            logging.info('State size mismatch. Chain file: %s, requested state size: %s.', len(markov_json[0][0]),
-                         state_size)
-            markov_json = None
-    else:
-        markov_json = None
+    markov_json = load_model_json(model_filepath)
 
     logging.debug('Loading corpus.')
-    corpus = load_corpus(corpus_file)
+    corpus = load_corpus_text(corpus_filepath)
     logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
         logging.debug('Using nltk')
         nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
-        text_model = POSifiedText.from_chain(markov_json, corpus=corpus)
+        text_model = POSifiedText.from_json(markov_json)
     elif markov_json:
         logging.debug('Using existing chain file.')
-        text_model = markovify.Text.from_chain(markov_json, corpus=corpus)
+        text_model = markovify.Text.from_json(markov_json)
     else:
         logging.debug('Creating new chain file.')
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
         with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
-            json_file.write(text_model.chain.to_json())
+            json_file.write(text_model.to_json())
 
     return text_model
 
@@ -125,7 +130,7 @@ def parse_arguments(arguments):
     parser.add_argument('-c', '--characters',
                         dest='num_chars',
                         type=int, default=140,
-                        help='Set the max chacter length for the generated message.')
+                        help='Set the max character length for the generated message.')
     parser.add_argument('-n', '--natural',
                         dest='use_nltk',
                         type=int, default=0,

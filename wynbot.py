@@ -4,6 +4,7 @@
 import datetime as dt
 import json
 import logging
+import os
 import os.path
 import re
 from argparse import ArgumentParser
@@ -146,8 +147,15 @@ def configure_logging():
     # Configure root logger. Level 5 = verbose to catch mostly everything.
     logger = logging.getLogger()
     logger.setLevel(level=5)
+
+    log_folder = os.path.join(CWD, 'logs')
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder, exist_ok=True)
+
     log_filename = 'wynbot_{0}.log'.format(dt.datetime.now().strftime('%Y%m%d_%Hh%Mm%Ss'))
-    log_handler = logging.FileHandler(os.path.join(CWD, 'logs', log_filename))
+    log_filepath = os.path.join(log_folder, log_filename)
+    log_handler = logging.FileHandler(log_filepath)
+
     log_format = logging.Formatter(
         fmt='%(asctime)s.%(msecs).03d %(name)-12s %(levelname)-8s %(message)s (%(filename)s:%(lineno)d)',
         datefmt='%Y-%m-%d %H:%M:%S')

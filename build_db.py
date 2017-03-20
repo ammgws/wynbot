@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-# standard library
-# import datetime as dt
-# third party
+import click
 import simplejson as json
 
 
@@ -56,12 +54,14 @@ def generate_corpus(data, convo_id):
     return corpus
 
 
-def main():
-    filename = 'hangouts.json'  # Hangouts chat log data from Google Takeout
-    with open(filename, 'rb') as file:
+@click.command()
+@click.argument('jsonfile', type=click.Path(exists=True))
+def main(jsonfile):
+    """Extracts a specific conversation from Hangouts data exported from Google Takeout, and readies it for use by Wynbot."""
+    with open(jsonfile, 'rb') as file:
         data = json.load(file)
 
-    # Get list of conversations and choose which one to use for data extraction
+    # Get list of conversations and choose which one to use for data extraction. This may take some time.
     convos = get_conversations(data)
     selection_choices = {}
     print('{:<3} {:<35} {:<50}'.format('No.', 'Convo ID', 'Participants'))
@@ -69,16 +69,17 @@ def main():
         print('{num:<3} {convo_id:<35} {participants}'.format(num=index, convo_id=key, participants=', '.join(value)))
         selection_choices[index] = key
     selection = int(input('Enter no. of conversation to use: '))
-    print(selection_choices)
     selected_convo_id = selection_choices[selection]
 
     # Generate corpus of message text using the chosen conversation
     corpus = generate_corpus(data, selected_convo_id)
 
-    # Output text file with each message on a new line
+    # Output text file with each message on a new line.
     with open('corpus.txt', 'w', encoding='utf-8') as file:
         for line in corpus:
             file.write('{0}\n'.format(line))
+
+    print('Corpus extracted to "corpus.txt".')
 
 if __name__ == '__main__':
     main()

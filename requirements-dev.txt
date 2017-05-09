@@ -1,9 +1,9 @@
 #
-# Development packages for ammcon-frontend
+# Wynbot was developed/tested with the following package versions:
 #
 
-click
-markovify
-nltk
-simplejson
-sleekxmpp
+click==6.7
+markovify==0.6.0
+nltk==3.2.2
+simplejson==3.10.0
+sleekxmpp==1.3.2

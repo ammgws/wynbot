@@ -7,11 +7,11 @@ import logging
 import os
 import os.path
 import re
-from argparse import ArgumentParser
 from random import randint
 from sys import path
 from time import sleep
 # third party
+import click
 import markovify
 import nltk
 
@@ -82,21 +82,23 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
     return text_model
 
 
-def main(arguments):
+@click.command()
+@click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
+@click.option('--chars', '-c', default=140, help='max character length for the generated message.')
+@click.option('--state_size', '-ｓs', default=2, help='state size for Markov model.')
+@click.option('--natural', '-n', default=0, 'use ntlk (much slower than standard Markov).')
+def main(delay, chars, state_size, natural):
     """
     Login to Hangouts, send generated message and disconnect.
     """
-    args = parse_arguments(arguments)
-
     # Path to config file
     config_path = os.path.join(CWD, 'wynbot.ini')
     logging.debug('Using config file: %s', config_path)
 
-    # Sleep random amount of time so messages are sent at a different time everyday
-    if args.delay >= 0:
-        delay = args.delay
-    else:
+    if delay == -1:
+        # Sleep random amount of time so messages are sent at a different time everyday
         delay = randint(1, 8 * 60 * 60)  # range of 1s to 8 hours
+
     delay_date = dt.datetime.now() + dt.timedelta(seconds=delay)
     logging.info('Sleeping for %s seconds, continue at %s', delay, delay_date.strftime("%Y/%m/%d %H:%M:%S"))
     sleep(delay)
@@ -104,9 +106,9 @@ def main(arguments):
     # Build the text model using markovify
     corpus_file = os.path.join(CWD, 'corpus.txt')
     chain_file = os.path.join(CWD, 'markov_chain.json')
-    text_model = build_text_model(args.state_size, args.use_nltk, corpus_file, chain_file)
-    logging.debug('Starting message generation. Max. chars: %s', args.num_chars)
-    message = text_model.make_short_sentence(args.num_chars) or "failed to generate message"
+    text_model = build_text_model(state_size, natural, corpus_file, chain_file)
+    logging.debug('Starting message generation. Max. chars: %s', chars)
+    message = text_model.make_short_sentence(chars) or "failed to generate message"
     logging.info('Generated message (%s chars): "%s"', len(message), message)
 
     # Setup Hangouts bot instance
@@ -119,28 +121,6 @@ def main(arguments):
         logging.info("Finished sending today's message.")
     else:
         logging.error('Unable to connect to Hangouts.')
-
-
-def parse_arguments(arguments):
-    # Get command line arguments
-    parser = ArgumentParser(description='Send Markov generated message.')
-    parser.add_argument('-d', '--delay',
-                        dest='delay',
-                        type=int, default=-1,
-                        help='Set delay before script enters main subroutine.')
-    parser.add_argument('-c', '--characters',
-                        dest='num_chars',
-                        type=int, default=140,
-                        help='Set the max character length for the generated message.')
-    parser.add_argument('-n', '--natural',
-                        dest='use_nltk',
-                        type=int, default=0,
-                        help='Set whether to use ntlk or not (much slower than standard Markov).')
-    parser.add_argument('-s', '--statesize',
-                        dest='state_size',
-                        type=int, default=2,
-                        help='Set the state size for Markov model.')
-    return parser.parse_args(arguments)
 
 
 def configure_logging():
@@ -177,10 +157,6 @@ class POSifiedText(markovify.Text):
         sentence = ' '.join(word.split('::')[0] for word in words)
         return sentence
 
-
 if __name__ == '__main__':
-    from sys import argv  # pylint: disable=C0412
-
     configure_logging()
-
-    main(argv[1:])
+    main()

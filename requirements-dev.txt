@@ -1,0 +1,9 @@
+#
+# Development packages for ammcon-frontend
+#
+
+click
+markovify
+nltk
+simplejson
+sleekxmpp

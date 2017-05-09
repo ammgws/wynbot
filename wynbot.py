@@ -86,7 +86,7 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
 @click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
 @click.option('--chars', '-c', default=140, help='max character length for the generated message.')
 @click.option('--state_size', '-ｓs', default=2, help='state size for Markov model.')
-@click.option('--natural', '-n', default=0, 'use ntlk (much slower than standard Markov).')
+@click.option('--natural', '-n', default=0, help='use ntlk (much slower than standard Markov).')
 def main(delay, chars, state_size, natural):
     """
     Login to Hangouts, send generated message and disconnect.

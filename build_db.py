@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import click
-import simplejson as json
-
+import json
 
 def get_conversations(data):
     """ Return dict of unique conversation IDs and their participants. """

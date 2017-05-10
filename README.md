@@ -3,6 +3,7 @@ Hangouts chatbot that mimics your friends
 
 ##### Requirements
 * GMail or Google Apps account which can use Hangouts
+* Python 3.6+
 
 ##### Installation
 git clone https://github.com/ammgws/wynbot.git

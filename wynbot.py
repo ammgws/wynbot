@@ -69,9 +69,17 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
         logging.debug('Using nltk')
         nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
         text_model = POSifiedText.from_json(markov_json)
-    elif markov_json:
+    elif markov_json and state_size == markov_json["state_s＃＃ize"]:
         logging.debug('Using existing chain file from %s.', model_filepath)
         text_model = markovify.Text.from_dict(markov_json)
+    elif markov_json and state_size != markov_json["state_size"]:
+        logging.debug('Existing chain file is of state size %s, where as requested is %s', state_size, markov_json["state_size"])
+        logging.debug('Creating new chain file.')
+        TODO: refactor
+        text_model = markovify.Text(corpus, state_size=state_size, chain=None)
+        # save our newly created Markov chain for the next time script is run
+        with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
+            json_file.write(text_model.to_json())
     else:
         logging.debug('Creating new chain file.')
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)

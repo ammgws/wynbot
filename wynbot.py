@@ -75,7 +75,7 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
     elif markov_json and state_size != markov_json["state_size"]:
         logging.debug('Existing chain file is of state size %s, where as requested is %s', state_size, markov_json["state_size"])
         logging.debug('Creating new chain file.')
-        TODO: refactor
+        # TODO: refactor
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
         with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:

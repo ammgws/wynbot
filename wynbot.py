@@ -62,7 +62,7 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
     """
     markov_json = load_model_json(model_filepath)
 
-    logging.debug('Loading corpus.')
+    logging.debug('Loading corpus from %s.', corpus_filepath)
     corpus = load_corpus_text(corpus_filepath)
     logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
@@ -70,8 +70,8 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
         nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
         text_model = POSifiedText.from_json(markov_json)
     elif markov_json:
-        logging.debug('Using existing chain file.')
-        text_model = markovify.Text.from_json(markov_json)
+        logging.debug('Using existing chain file from %s.', model_filepath)
+        text_model = markovify.Text.from_dict(markov_json)
     else:
         logging.debug('Creating new chain file.')
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)

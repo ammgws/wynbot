@@ -18,6 +18,6 @@ setup(
     ],
     python_requires='>=3.6',
     packages=find_packages(exclude=['tests']),
-    install_requires=['click, markovify, nltk'],
+    install_requires=['click', 'markovify', 'nltk'],
     dependency_links=['https://github.com/ammgws/hangouts_client/tarball/master']
 )

@@ -14,14 +14,13 @@ from time import sleep
 import click
 import markovify
 import nltk
-
 from hangoutsclient import HangoutsClient
 
 
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
 
 # Get absolute path of the dir script is run from
-CWD = path[0]  # pylint: disable=C0103
+CONFIG_DIR = path[0]  # pylint: disable=C0103
 
 
 def load_corpus_text(corpus_file):
@@ -67,7 +66,7 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
     logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
         logging.debug('Using nltk')
-        nltk.data.path.append(os.path.join(CWD, 'nltk_data'))
+        nltk.data.path.append(os.path.join(CONFIG_DIR, 'nltk_data'))
         text_model = POSifiedText.from_json(markov_json)
     elif markov_json and state_size == markov_json["state_s＃＃ize"]:
         logging.debug('Using existing chain file from %s.', model_filepath)
@@ -78,13 +77,13 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
         # TODO: refactor
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
-        with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
+        with open(os.path.join(CONFIG_DIR, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.to_json())
     else:
         logging.debug('Creating new chain file.')
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
-        with open(os.path.join(CWD, 'markov_chain.json'), 'w') as json_file:
+        with open(os.path.join(CONFIG_DIR, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.to_json())
 
     return text_model
@@ -99,8 +98,7 @@ def main(delay, chars, state_size, natural):
     """
     Login to Hangouts, send generated message and disconnect.
     """
-    # Path to config file
-    config_path = os.path.join(CWD, 'wynbot.ini')
+    config_path = os.path.join(CONFIG_DIR, 'wynbot.ini')
     logging.debug('Using config file: %s', config_path)
 
     if delay == -1:
@@ -112,8 +110,8 @@ def main(delay, chars, state_size, natural):
     sleep(delay)
 
     # Build the text model using markovify
-    corpus_file = os.path.join(CWD, 'corpus.txt')
-    chain_file = os.path.join(CWD, 'markov_chain.json')
+    corpus_file = os.path.join(CONFIG_DIR, 'corpus.txt')
+    chain_file = os.path.join(CONFIG_DIR, 'markov_chain.json')
     text_model = build_text_model(state_size, natural, corpus_file, chain_file)
     logging.debug('Starting message generation. Max. chars: %s', chars)
     message = text_model.make_short_sentence(chars) or "failed to generate message"
@@ -136,7 +134,7 @@ def configure_logging():
     logger = logging.getLogger()
     logger.setLevel(level=5)
 
-    log_folder = os.path.join(CWD, 'logs')
+    log_folder = os.path.join(CONFIG_DIR, 'logs')
     if not os.path.exists(log_folder):
         os.makedirs(log_folder, exist_ok=True)
 

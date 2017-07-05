@@ -85,7 +85,7 @@ def build_text_model(config_path, state_size, use_nltk, corpus_filepath, model_f
 
 
 @click.command()
-@click.option('--config_path', '-c', default=os.path.expanduser('~/.config/wynbot'), type=click.Path(), help='path to directory containing config file.')
+@click.option('--config_path', '-c', default=os.path.expanduser('~/.config/wynbot'), type=click.Path(exists=True), help='path to directory containing config file.')
 @click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
 @click.option('--num_chars', '-n', default=140, help='max character length for the generated message.')
 @click.option('--state_size', '-s', default=2, help='state size for Markov model.')

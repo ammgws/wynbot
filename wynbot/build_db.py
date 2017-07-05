@@ -3,6 +3,7 @@
 import click
 import json
 
+
 def get_conversations(data):
     """ Return dict of unique conversation IDs and their participants. """
 
@@ -79,6 +80,7 @@ def main(jsonfile):
             file.write('{0}\n'.format(line))
 
     print('Corpus extracted to "corpus.txt".')
+
 
 if __name__ == '__main__':
     main()

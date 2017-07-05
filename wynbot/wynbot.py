@@ -8,7 +8,6 @@ import os
 import os.path
 import re
 from random import randint
-from sys import path
 from time import sleep
 # third party
 import click
@@ -16,11 +15,7 @@ import markovify
 import nltk
 from hangoutsclient import HangoutsClient
 
-
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
-
-# Get absolute path of the dir script is run from
-CONFIG_DIR = path[0]  # pylint: disable=C0103
 
 
 def load_corpus_text(corpus_file):
@@ -54,7 +49,7 @@ def load_model_json(model_file):
     return markov_json
 
 
-def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
+def build_text_model(config_path, state_size, use_nltk, corpus_filepath, model_filepath):
     """
     Build a new Markov chain generator model.
     Returns a markovify Text instance.
@@ -66,9 +61,9 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
     logging.debug('Creating text model with state size %s', state_size)
     if use_nltk:
         logging.debug('Using nltk')
-        nltk.data.path.append(os.path.join(CONFIG_DIR, 'nltk_data'))
+        nltk.data.path.append(os.path.join(config_path, 'nltk_data'))
         text_model = POSifiedText.from_json(markov_json)
-    elif markov_json and state_size == markov_json["state_s＃＃ize"]:
+    elif markov_json and state_size == markov_json["state_size"]:
         logging.debug('Using existing chain file from %s.', model_filepath)
         text_model = markovify.Text.from_dict(markov_json)
     elif markov_json and state_size != markov_json["state_size"]:
@@ -77,29 +72,32 @@ def build_text_model(state_size, use_nltk, corpus_filepath, model_filepath):
         # TODO: refactor
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
-        with open(os.path.join(CONFIG_DIR, 'markov_chain.json'), 'w') as json_file:
+        with open(os.path.join(config_path, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.to_json())
     else:
         logging.debug('Creating new chain file.')
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
-        with open(os.path.join(CONFIG_DIR, 'markov_chain.json'), 'w') as json_file:
+        with open(os.path.join(config_path, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.to_json())
 
     return text_model
 
 
 @click.command()
+@click.option('--config_path', '-c', default=os.path.expanduser('~/.config/wynbot'), type=click.Path(), help='path to directory containing config file.')
 @click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
-@click.option('--chars', '-c', default=140, help='max character length for the generated message.')
+@click.option('--num_chars', '-n', default=140, help='max character length for the generated message.')
 @click.option('--state_size', '-s', default=2, help='state size for Markov model.')
 @click.option('--natural', '-n', default=0, help='use ntlk (much slower than standard Markov).')
-def main(delay, chars, state_size, natural):
+def main(config_path, delay, num_chars, state_size, natural):
     """
     Login to Hangouts, send generated message and disconnect.
     """
-    config_path = os.path.join(CONFIG_DIR, 'wynbot.ini')
-    logging.debug('Using config file: %s', config_path)
+    config_file = os.path.join(config_path, 'wynbot.ini')
+    logging.debug('Using config file: %s', config_file)
+
+    configure_logging(config_path)
 
     if delay == -1:
         # Sleep random amount of time so messages are sent at a different time everyday
@@ -110,15 +108,15 @@ def main(delay, chars, state_size, natural):
     sleep(delay)
 
     # Build the text model using markovify
-    corpus_file = os.path.join(CONFIG_DIR, 'corpus.txt')
-    chain_file = os.path.join(CONFIG_DIR, 'markov_chain.json')
-    text_model = build_text_model(state_size, natural, corpus_file, chain_file)
-    logging.debug('Starting message generation. Max. chars: %s', chars)
-    message = text_model.make_short_sentence(chars) or "failed to generate message"
+    corpus_file = os.path.join(config_path, 'corpus.txt')
+    chain_file = os.path.join(config_path, 'markov_chain.json')
+    text_model = build_text_model(config_path, state_size, natural, corpus_file, chain_file)
+    logging.debug('Starting message generation. Max. chars: %s', num_chars)
+    message = text_model.make_short_sentence(num_chars) or "failed to generate message"
     logging.info('Generated message (%s chars): "%s"', len(message), message)
 
     # Setup Hangouts bot instance
-    hangouts = HangoutsClient(config_path, message)
+    hangouts = HangoutsClient(config_file, message)
 
     # Connect to Hangouts and start processing XMPP stanzas.
     if hangouts.connect(address=('talk.google.com', 5222),
@@ -129,12 +127,12 @@ def main(delay, chars, state_size, natural):
         logging.error('Unable to connect to Hangouts.')
 
 
-def configure_logging():
+def configure_logging(config_path):
     # Configure root logger. Level 5 = verbose to catch mostly everything.
     logger = logging.getLogger()
     logger.setLevel(level=5)
 
-    log_folder = os.path.join(CONFIG_DIR, 'logs')
+    log_folder = os.path.join(config_path, 'logs')
     if not os.path.exists(log_folder):
         os.makedirs(log_folder, exist_ok=True)
 
@@ -164,5 +162,4 @@ class POSifiedText(markovify.Text):
         return sentence
 
 if __name__ == '__main__':
-    configure_logging()
     main()

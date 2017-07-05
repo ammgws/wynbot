@@ -6,7 +6,9 @@ Hangouts chatbot that mimics your friends
 * Python 3.6+
 
 ##### Installation
-git clone https://github.com/ammgws/wynbot.git
+git clone https://github.com/ammgws/wynbot.git  
+cd wynbot  
+pip install -r requirements.txt  
 
 ##### Before Use
 1. Go to [Google Takeout](https://takeout.google.com/settings/takeout) and export your Hangouts chat data.

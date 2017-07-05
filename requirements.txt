@@ -1,0 +1,7 @@
+click
+markovify
+nltk
+simplejson
+sleekxmpp
+git+git://github.com/ammgws/google_auth.git
+git+git://github.com/ammgws/hangouts_client.git

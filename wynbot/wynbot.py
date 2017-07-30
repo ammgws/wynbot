@@ -115,13 +115,14 @@ def main(config_path, delay, num_chars, state_size, natural):
     message = text_model.make_short_sentence(num_chars) or "failed to generate message"
     logging.info('Generated message (%s chars): "%s"', len(message), message)
 
-    # Setup Hangouts bot instance
-    hangouts = HangoutsClient(config_file, message)
-
-    # Connect to Hangouts and start processing XMPP stanzas.
+    # Setup Hangouts bot instance, connect and send message
+    hangouts = HangoutsClient(config_file)
     if hangouts.connect(address=('talk.google.com', 5222),
                         reattempt=True, use_tls=True):
-        hangouts.process(block=True)
+        hangouts.process(block=False)
+        sleep(5)  # need time for Hangouts roster to update
+        hangouts.send_to_all(message)
+        hangouts.disconnect(wait=True)
         logging.info("Finished sending today's message.")
     else:
         logging.error('Unable to connect to Hangouts.')

@@ -84,7 +84,7 @@ def build_text_model(config_path, state_size, corpus_filepath, model_filepath):
 @click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
 @click.option('--num_chars', '-n', default=140, help='max character length for the generated message.')
 @click.option('--state_size', '-s', default=2, help='state size for Markov model.')
-def main(config_path, delay, num_chars, state_size, natural):
+def main(config_path, delay, num_chars, state_size):
     """
     Login to Hangouts, send generated message and disconnect.
     """
@@ -104,7 +104,7 @@ def main(config_path, delay, num_chars, state_size, natural):
     # Build the text model using markovify
     corpus_file = os.path.join(config_path, 'corpus.txt')
     chain_file = os.path.join(config_path, 'markov_chain.json')
-    text_model = build_text_model(config_path, state_size, natural, corpus_file, chain_file)
+    text_model = build_text_model(config_path, state_size, corpus_file, chain_file)
     logging.debug('Starting message generation. Max. chars: %s', num_chars)
     message = text_model.make_short_sentence(num_chars) or "failed to generate message"
     logging.info('Generated message (%s chars): "%s"', len(message), message)

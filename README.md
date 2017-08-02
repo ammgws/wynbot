@@ -17,6 +17,38 @@ pip install -r requirements.txt
 ##### Usage
 
 
+##### Run via systemd timer
+Example, once per day at 11.30am:
+
+Create the following user units in `~/.config/systemd/user`  
+(may have to create if not existing):  
+`wynbot.timer`
+```
+[Unit]
+Description=Run wynbot once daily at 11.30am
+
+[Timer]
+OnCalendar=*-*-* 11:30:00
+
+[Install]
+WantedBy=timers.target
+```
+
+`wynbot.service`
+```
+[Unit]
+Description=Runs wynbot.
+
+[Service]
+Type=simple
+ExecStart=/path/to/venv/bin/python /path/to/wynbot/wynbot.py
+
+[Install]
+WantedBy=default.target
+```
+Enable with `systemctl --user enable wynbot.timer` 
+(note do NOT use sudo)
+
 ##### Run via crontab
 Example, once per day at 9am:
 ```

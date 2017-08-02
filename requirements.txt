@@ -1,6 +1,5 @@
 click
 markovify
-nltk
 sleekxmpp
 git+git://github.com/ammgws/google_auth.git
 git+git://github.com/ammgws/hangouts_client.git

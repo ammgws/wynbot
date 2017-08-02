@@ -12,7 +12,6 @@ from time import sleep
 # third party
 import click
 import markovify
-import nltk
 from hangoutsclient import HangoutsClient
 
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
@@ -49,7 +48,7 @@ def load_model_json(model_file):
     return markov_json
 
 
-def build_text_model(config_path, state_size, use_nltk, corpus_filepath, model_filepath):
+def build_text_model(config_path, state_size, corpus_filepath, model_filepath):
     """
     Build a new Markov chain generator model.
     Returns a markovify Text instance.
@@ -59,11 +58,7 @@ def build_text_model(config_path, state_size, use_nltk, corpus_filepath, model_f
     logging.debug('Loading corpus from %s.', corpus_filepath)
     corpus = load_corpus_text(corpus_filepath)
     logging.debug('Creating text model with state size %s', state_size)
-    if use_nltk:
-        logging.debug('Using nltk')
-        nltk.data.path.append(os.path.join(config_path, 'nltk_data'))
-        text_model = POSifiedText.from_json(markov_json)
-    elif markov_json and state_size == markov_json["state_size"]:
+    if markov_json and state_size == markov_json["state_size"]:
         logging.debug('Using existing chain file from %s.', model_filepath)
         text_model = markovify.Text.from_dict(markov_json)
     elif markov_json and state_size != markov_json["state_size"]:
@@ -89,7 +84,6 @@ def build_text_model(config_path, state_size, use_nltk, corpus_filepath, model_f
 @click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
 @click.option('--num_chars', '-n', default=140, help='max character length for the generated message.')
 @click.option('--state_size', '-s', default=2, help='state size for Markov model.')
-@click.option('--natural', '-n', default=0, help='use ntlk (much slower than standard Markov).')
 def main(config_path, delay, num_chars, state_size, natural):
     """
     Login to Hangouts, send generated message and disconnect.
@@ -150,16 +144,6 @@ def configure_logging(config_path):
     # Quieten SleekXMPP output
     # logging.getLogger('sleekxmpp.xmlstream.xmlstream').setLevel(logging.INFO)
 
-
-class POSifiedText(markovify.Text):
-    def word_split(self, sentence):
-        words = re.split(self.word_split_pattern, sentence)
-        words = ['::'.join(tag) for tag in nltk.pos_tag(words)]
-        return words
-
-    def word_join(self, words):
-        sentence = ' '.join(word.split('::')[0] for word in words)
-        return sentence
 
 if __name__ == '__main__':
     main()

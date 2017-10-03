@@ -25,10 +25,11 @@ Create the following user units in `~/.config/systemd/user`
 `wynbot.timer`
 ```
 [Unit]
-Description=Run wynbot once daily at 11.30am
+Description=Run wynbot at a random time between 1130~2330
 
 [Timer]
 OnCalendar=*-*-* 11:30:00
+RandomizedDelaySec=43200
 
 [Install]
 WantedBy=timers.target
@@ -41,7 +42,7 @@ Description=Runs wynbot.
 
 [Service]
 Type=simple
-ExecStart=/path/to/venv/bin/python /path/to/wynbot/wynbot.py
+ExecStart=/path/to/venv/bin/python /path/to/wynbot/wynbot.py -d0
 
 [Install]
 WantedBy=default.target

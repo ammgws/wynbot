@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import os.path
+from configparser import ConfigParser
+from pathlib import Path
 from random import randint
 from time import sleep
 # third party
@@ -14,6 +16,8 @@ import markovify
 from hangoutsclient import HangoutsClient
 
 # Inspired by: http://hirelofty.com/blog/how-build-slack-bot-mimics-your-colleague/
+
+APP_NAME = 'wynbot'
 
 
 def load_corpus_text(corpus_file):
@@ -78,19 +82,45 @@ def build_text_model(config_path, state_size, corpus_filepath, model_filepath):
     return text_model
 
 
+def create_dir(ctx, param, directory):
+    if not os.path.isdir(directory):
+        os.makedirs(directory, exist_ok=True)
+    return directory
+
+
 @click.command()
-@click.option('--config_path', '-c', default=os.path.expanduser('~/.config/wynbot'), type=click.Path(exists=True), help='path to directory containing config file.')
 @click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
 @click.option('--num_chars', '-n', default=140, help='max character length for the generated message.')
 @click.option('--state_size', '-s', default=2, help='state size for Markov model.')
-def main(config_path, delay, num_chars, state_size):
+@click.option(
+    '--config-path',
+    type=click.Path(),
+    default=os.path.join(os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config')), APP_NAME),
+    callback=create_dir,
+    help='Path to directory containing config file. Defaults to XDG config dir.',
+)
+@click.option(
+    '--cache-path',
+    type=click.Path(),
+    default=os.path.join(os.environ.get('XDG_CACHE_HOME', os.path.expanduser('~/.cache')), APP_NAME),
+    callback=create_dir,
+    help='Path to directory to store logs and such. Defaults to XDG cache dir.',
+)
+def main(config_path, cache_path, delay, num_chars, state_size):
     """
     Login to Hangouts, send generated message and disconnect.
     """
-    configure_logging(config_path)
+    configure_logging(cache_path)
 
     config_file = os.path.join(config_path, 'wynbot.ini')
-    logging.debug('Using config file: %s', config_file)
+    logging.debug('Using config file: %s.', config_file)
+    config = ConfigParser()
+    config.read(config_file)
+    client_id = config.get('Hangouts', 'client_id')
+    client_secret = config.get('Hangouts', 'client_secret')
+    refresh_token = os.path.join(cache_path, 'refresh_token')
+    if not os.path.isfile(refresh_token):
+        Path(refresh_token).touch()
 
     if delay == -1:
         # Sleep random amount of time so messages are sent at a different time everyday
@@ -109,7 +139,7 @@ def main(config_path, delay, num_chars, state_size):
     logging.info('Generated message (%s chars): "%s"', len(message), message)
 
     # Setup Hangouts bot instance, connect and send message
-    hangouts = HangoutsClient(config_file)
+    hangouts = HangoutsClient(client_id, client_secret, refresh_token)
     if hangouts.connect():
         hangouts.process(block=False)
         sleep(5)  # need time for Hangouts roster to update
@@ -120,12 +150,12 @@ def main(config_path, delay, num_chars, state_size):
         logging.error('Unable to connect to Hangouts.')
 
 
-def configure_logging(config_path):
+def configure_logging(log_dir):
     # Configure root logger. Level 5 = verbose to catch mostly everything.
     logger = logging.getLogger()
     logger.setLevel(level=5)
 
-    log_folder = os.path.join(config_path, 'logs')
+    log_folder = os.path.join(log_dir, 'logs')
     if not os.path.exists(log_folder):
         os.makedirs(log_folder, exist_ok=True)
 

@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import os.path
-import re
 from random import randint
 from time import sleep
 # third party

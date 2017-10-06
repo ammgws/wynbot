@@ -51,7 +51,7 @@ def load_model_json(model_file):
     return markov_json
 
 
-def build_text_model(config_path, state_size, corpus_filepath, model_filepath):
+def build_text_model(cache_path, state_size, corpus_filepath, model_filepath):
     """
     Build a new Markov chain generator model.
     Returns a markovify Text instance.
@@ -70,13 +70,13 @@ def build_text_model(config_path, state_size, corpus_filepath, model_filepath):
         # TODO: refactor
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
-        with open(os.path.join(config_path, 'markov_chain.json'), 'w') as json_file:
+        with open(os.path.join(cache_path, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.to_json())
     else:
         logging.debug('Creating new chain file.')
         text_model = markovify.Text(corpus, state_size=state_size, chain=None)
         # save our newly created Markov chain for the next time script is run
-        with open(os.path.join(config_path, 'markov_chain.json'), 'w') as json_file:
+        with open(os.path.join(cache_path, 'markov_chain.json'), 'w') as json_file:
             json_file.write(text_model.to_json())
 
     return text_model

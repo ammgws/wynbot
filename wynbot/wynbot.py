@@ -89,9 +89,6 @@ def create_dir(ctx, param, directory):
 
 
 @click.command()
-@click.option('--delay', '-d', default=-1, help='delay (in secs) before script enters main subroutine. -1 for random delay.')
-@click.option('--num_chars', '-n', default=140, help='max character length for the generated message.')
-@click.option('--state_size', '-s', default=2, help='state size for Markov model.')
 @click.option(
     '--config-path',
     type=click.Path(),
@@ -105,6 +102,21 @@ def create_dir(ctx, param, directory):
     default=os.path.join(os.environ.get('XDG_CACHE_HOME', os.path.expanduser('~/.cache')), APP_NAME),
     callback=create_dir,
     help='Path to directory to store logs and such. Defaults to XDG cache dir.',
+)
+@click.option(
+    '--delay', '-d',
+    default=-1,
+    help='delay (in secs) before script enters main subroutine. -1 for random delay.',
+)
+@click.option(
+    '--num_chars', '-n',
+    default=140,
+    help='max character length for the generated message.',
+)
+@click.option(
+    '--state_size', '-s',
+    default=2,
+    help='state size for Markov model.',
 )
 def main(config_path, cache_path, delay, num_chars, state_size):
     """
@@ -165,7 +177,8 @@ def configure_logging(log_dir):
 
     log_format = logging.Formatter(
         fmt='%(asctime)s.%(msecs).03d %(name)-12s %(levelname)-8s %(message)s (%(filename)s:%(lineno)d)',
-        datefmt='%Y-%m-%d %H:%M:%S')
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     log_handler.setFormatter(log_format)
     logger.addHandler(log_handler)
     # Lower requests module's log level so that OAUTH2 details aren't logged

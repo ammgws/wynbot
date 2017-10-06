@@ -27,10 +27,10 @@ def load_corpus_text(corpus_file):
     """
 
     if corpus_file.endswith('.txt'):
-        with open(corpus_file, 'r', encoding='utf-8') as f:
+        with open(corpus_file, encoding='utf-8') as f:
             text = f.read()
     elif corpus_file.endswith('.json'):
-        with open(corpus_file, 'r') as f:
+        with open(corpus_file) as f:
             messages = json.loads(f.read())
         text = ''.join(messages.values())
     else:
@@ -42,7 +42,7 @@ def load_corpus_text(corpus_file):
 def load_model_json(model_file):
     if os.path.isfile(model_file):
         logging.info('Loading model from file.')
-        with open(model_file, 'r') as json_file:
+        with open(model_file) as json_file:
             markov_json = json.load(json_file)
     else:
         # file does not exist

@@ -144,8 +144,8 @@ def main(config_path, cache_path, delay, num_chars, state_size):
 
     # Build the text model using markovify
     corpus_file = os.path.join(config_path, 'corpus.txt')
-    chain_file = os.path.join(config_path, 'markov_chain.json')
-    text_model = build_text_model(config_path, state_size, corpus_file, chain_file)
+    chain_file = os.path.join(cache_path, 'markov_chain.json')
+    text_model = build_text_model(cache_path, state_size, corpus_file, chain_file)
     logging.debug('Starting message generation. Max. chars: %s', num_chars)
     message = text_model.make_short_sentence(num_chars) or "failed to generate message"
     logging.info('Generated message (%s chars): "%s"', len(message), message)

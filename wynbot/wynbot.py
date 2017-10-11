@@ -130,9 +130,9 @@ def main(config_path, cache_path, delay, num_chars, state_size):
     config.read(config_file)
     client_id = config.get('Hangouts', 'client_id')
     client_secret = config.get('Hangouts', 'client_secret')
-    refresh_token = os.path.join(cache_path, 'refresh_token')
-    if not os.path.isfile(refresh_token):
-        Path(refresh_token).touch()
+    token_file = os.path.join(cache_path, 'hangouts_cached_token')
+    if not os.path.isfile(token_file):
+        Path(token_file).touch()
 
     if delay == -1:
         # Sleep random amount of time so messages are sent at a different time everyday
@@ -151,7 +151,7 @@ def main(config_path, cache_path, delay, num_chars, state_size):
     logging.info('Generated message (%s chars): "%s"', len(message), message)
 
     # Setup Hangouts bot instance, connect and send message
-    hangouts = HangoutsClient(client_id, client_secret, refresh_token)
+    hangouts = HangoutsClient(client_id, client_secret, token_file)
     if hangouts.connect():
         hangouts.process(block=False)
         sleep(5)  # need time for Hangouts roster to update

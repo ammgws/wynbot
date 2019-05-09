@@ -15,45 +15,17 @@ pip install -r requirements.txt
 2. Go to [Google APIs](https://console.developers.google.com/apis/) and generate secret client ID/password.
 
 ##### Usage
+Usage: wynbot.py [OPTIONS] RECIPIENT
 
+  Login to Hangouts, send generated message and disconnect.
 
-##### Run via systemd timer
-Example, once per day at 11.30am:
-
-Create the following user units in `~/.config/systemd/user`  
-(may have to create if not existing):  
-`wynbot.timer`
-```
-[Unit]
-Description=Run wynbot at a random time between 1130~2330
-
-[Timer]
-OnCalendar=*-*-* 11:30:00
-RandomizedDelaySec=43200
-
-[Install]
-WantedBy=timers.target
-```
-
-`wynbot.service`
-```
-[Unit]
-Description=Runs wynbot.
-
-[Service]
-Type=simple
-ExecStart=/path/to/venv/bin/python /path/to/wynbot/wynbot.py -d0
-
-[Install]
-WantedBy=default.target
-```
-Enable with `systemctl --user enable wynbot.timer` 
-(note do NOT use sudo)
-
-##### Run via crontab
-Example, once per day at 9am:
-```
-WYNBOT_DIR = /path/to/wynbot
-WYNBOT_VENV = /path/to/virtualenv/bin/python
-00 9 * * * /usr/bin/nice -n 20 $WYNBOT_VENV $WYNBOT_DIR/wynbot.py -s3 2>&1
-```
+Options:
+  --config-path PATH        Path to directory containing config file. Defaults
+                            to $XDG_CONFIG_HOME/wynbot.
+  --cache-path PATH         Path to directory to store logs and such. Defaults
+                            to $XDG_CACHE_HOME/wynbot.
+  -n, --num_chars INTEGER   max character length for the generated message.
+  -s, --state_size INTEGER  state size for Markov model.
+  --print-only              Print message to stdout, not Hangouts.
+  --prefix TEXT             String to prefix message with.
+  --help                    Show this message and exit.

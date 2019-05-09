@@ -1,5 +1,5 @@
 # wynbot
-Hangouts chatbot that mimics your friends
+Sends or generates a message mimicking your friends based on your Hangouts chat history.
 
 ##### Requirements
 * GMail or Google Apps account which can use Hangouts

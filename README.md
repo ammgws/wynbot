@@ -15,6 +15,7 @@ pip install -r requirements.txt
 2. Go to [Google APIs](https://console.developers.google.com/apis/) and generate secret client ID/password.
 
 ##### Usage
+```
 Usage: wynbot.py [OPTIONS] RECIPIENT
 
   Login to Hangouts, send generated message and disconnect.
@@ -29,3 +30,4 @@ Options:
   --print-only              Print message to stdout, not Hangouts.
   --prefix TEXT             String to prefix message with.
   --help                    Show this message and exit.
+```

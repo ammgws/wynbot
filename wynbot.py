@@ -98,7 +98,7 @@ def create_dir(ctx, param, directory):
     type=click.Path(),
     default=os.path.join(os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config')), APP_NAME),
     callback=create_dir,
-    help='Path to directory containing config file. Defaults to $XDG_CONFIG_HOME/{APP_NAME}.',
+    help=f'Path to directory containing config file. Defaults to $XDG_CONFIG_HOME/{APP_NAME}.',
 )
 @click.option(
     '--cache-path',

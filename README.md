@@ -1,6 +1,10 @@
 # wynbot
 Sends or generates a message mimicking your friends based on your Hangouts chat history.
 
+##### No longer maintained
+
+Archiving this repo as no longer use Google Hangouts.
+
 ##### Requirements
 * GMail or Google Apps account which can use Hangouts
 * Python 3.6+

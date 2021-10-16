@@ -128,11 +128,13 @@ def create_dir(ctx, param, directory):
     default='',
     help='String to prefix message with.'
 )
-def main(config_path, cache_path, num_chars, state_size, print_only, prefix, recipient):
+@click.option('--no-log', is_flag=True)
+def main(config_path, cache_path, num_chars, state_size, print_only, prefix, recipient, no_log):
     """
     Login to Hangouts, send generated message and disconnect.
     """
-    configure_logging(cache_path)
+    if not no_log:
+        configure_logging(cache_path)
 
     config_file = os.path.join(config_path, 'wynbot.ini')
     logging.debug('Using config file: %s.', config_file)

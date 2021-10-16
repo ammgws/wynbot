@@ -27,6 +27,7 @@ Options:
                             to $XDG_CONFIG_HOME/wynbot.
   --cache-path PATH         Path to directory to store logs and such. Defaults
                             to $XDG_CACHE_HOME/wynbot.
+  --no-log                  Disables logging.
   -n, --num_chars INTEGER   max character length for the generated message.
   -s, --state_size INTEGER  state size for Markov model.
   --print-only              Print message to stdout, not Hangouts.

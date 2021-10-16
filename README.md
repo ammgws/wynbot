@@ -1,9 +1,6 @@
 # wynbot
+# (No longer maintained as do not use Google Hangouts anymore)
 Sends or generates a message mimicking your friends based on your Hangouts chat history.
-
-# No longer maintained
-
-Archiving this repo as no longer use Google Hangouts.
 
 ##### Requirements
 * GMail or Google Apps account which can use Hangouts

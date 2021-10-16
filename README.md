@@ -6,9 +6,11 @@ Sends or generates a message mimicking your friends based on your Hangouts chat 
 * Python 3.6+
 
 ##### Installation
+```sh
 git clone https://github.com/ammgws/wynbot.git  
 cd wynbot  
-pip install -r requirements.txt  
+pip install -r requirements.txt
+```
 
 ##### Before Use
 1. Go to [Google Takeout](https://takeout.google.com/settings/takeout) and export your Hangouts chat data.
